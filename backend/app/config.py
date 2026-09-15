@@ -18,7 +18,8 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
     HUGGINGFACE_API_KEY: str = ""
-    MODEL_NAME: str = "gemini-3.6-flash"
+    LLM_PROVIDER: str = "auto"  # "huggingface", "gemini", "openai", or "auto"
+    MODEL_NAME: str = "gemini-3.5-flash"
     CHROMA_PATH: str = str(Path(__file__).resolve().parent.parent / "data" / "chroma")
     HOST: str = "0.0.0.0"
     PORT: int = 8000

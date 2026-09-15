@@ -50,21 +50,27 @@ TOOL_MAP = {t.name: t for t in AGENT_TOOLS}
 
 def get_llm():
     """Instantiate the Chat model (Google Gemini, Hugging Face, or OpenAI) bound with deterministic tools."""
-    if settings.GEMINI_API_KEY or "gemini" in settings.MODEL_NAME.lower():
+    provider = settings.LLM_PROVIDER.lower().strip()
+
+    if provider == "huggingface" or (provider == "auto" and settings.HUGGINGFACE_API_KEY and not settings.GEMINI_API_KEY):
+        model_name = settings.MODEL_NAME if "/" in settings.MODEL_NAME else "Qwen/Qwen2.5-72B-Instruct"
+        return ChatOpenAI(
+            base_url="https://router.huggingface.co/v1",
+            api_key=settings.HUGGINGFACE_API_KEY,
+            model=model_name,
+            temperature=0.0,
+        )
+
+    if provider == "gemini" or (provider == "auto" and settings.GEMINI_API_KEY) or "gemini" in settings.MODEL_NAME.lower():
+        model_name = settings.MODEL_NAME if "gemini" in settings.MODEL_NAME.lower() else "gemini-3.5-flash"
         return ChatGoogleGenerativeAI(
-            model=settings.MODEL_NAME,
+            model=model_name,
             google_api_key=settings.GEMINI_API_KEY,
             temperature=0.0,
         )
-    if settings.HUGGINGFACE_API_KEY:
-        return ChatOpenAI(
-            base_url="https://router.huggingface.co/hf-inference/v1",
-            api_key=settings.HUGGINGFACE_API_KEY,
-            model=settings.MODEL_NAME if "/" in settings.MODEL_NAME else "meta-llama/Llama-3.3-70B-Instruct",
-            temperature=0.0,
-        )
+
     return ChatOpenAI(
-        model=settings.MODEL_NAME,
+        model=settings.MODEL_NAME if settings.MODEL_NAME else "gpt-4o-mini",
         openai_api_key=settings.OPENAI_API_KEY,
         temperature=0.0,
         streaming=False,
