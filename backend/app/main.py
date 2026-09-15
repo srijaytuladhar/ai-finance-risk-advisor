@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning(
             "Could not verify or auto-ingest into ChromaDB on startup (%s). "
-            "Please ensure OPENAI_API_KEY is configured.",
+            "Please ensure GEMINI_API_KEY or OPENAI_API_KEY is configured.",
             str(exc),
         )
     yield

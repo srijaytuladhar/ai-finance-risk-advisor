@@ -16,8 +16,14 @@ DOCS_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "docs"
 COLLECTION_NAME = "fintech_risk_docs"
 
 
-def get_embedding_function() -> OpenAIEmbeddings:
-    """Return OpenAI embeddings instance using text-embedding-3-small."""
+def get_embedding_function():
+    """Return embedding function instance using Google Gemini or OpenAI."""
+    if settings.GEMINI_API_KEY or "gemini" in settings.MODEL_NAME.lower():
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        return GoogleGenerativeAIEmbeddings(
+            model="models/gemini-embedding-001",
+            google_api_key=settings.GEMINI_API_KEY,
+        )
     return OpenAIEmbeddings(
         model="text-embedding-3-small",
         openai_api_key=settings.OPENAI_API_KEY,

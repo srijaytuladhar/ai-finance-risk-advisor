@@ -5,6 +5,7 @@ import logging
 from typing import Any, Literal
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, StateGraph
 
 from app.agent.prompts import SYSTEM_PROMPT
@@ -48,7 +49,20 @@ TOOL_MAP = {t.name: t for t in AGENT_TOOLS}
 
 
 def get_llm():
-    """Instantiate the ChatOpenAI model bound with deterministic tools."""
+    """Instantiate the Chat model (Google Gemini, Hugging Face, or OpenAI) bound with deterministic tools."""
+    if settings.GEMINI_API_KEY or "gemini" in settings.MODEL_NAME.lower():
+        return ChatGoogleGenerativeAI(
+            model=settings.MODEL_NAME,
+            google_api_key=settings.GEMINI_API_KEY,
+            temperature=0.0,
+        )
+    if settings.HUGGINGFACE_API_KEY:
+        return ChatOpenAI(
+            base_url="https://router.huggingface.co/hf-inference/v1",
+            api_key=settings.HUGGINGFACE_API_KEY,
+            model=settings.MODEL_NAME if "/" in settings.MODEL_NAME else "meta-llama/Llama-3.3-70B-Instruct",
+            temperature=0.0,
+        )
     return ChatOpenAI(
         model=settings.MODEL_NAME,
         openai_api_key=settings.OPENAI_API_KEY,
@@ -200,7 +214,16 @@ def run_agent(message: str, history: list[dict[str, str]] | None = None) -> dict
     result = risk_advisor_graph.invoke(initial_state, {"recursion_limit": 20})
 
     final_message = result["messages"][-1]
-    response_text = final_message.content if isinstance(final_message, AIMessage) else str(final_message)
+    if isinstance(final_message, AIMessage):
+        if isinstance(final_message.content, list):
+            response_text = "".join(
+                p.get("text", "") if isinstance(p, dict) else str(p)
+                for p in final_message.content
+            )
+        else:
+            response_text = str(final_message.content)
+    else:
+        response_text = str(final_message)
 
     return {
         "response": response_text,

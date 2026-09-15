@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,8 +15,10 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    GEMINI_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
-    MODEL_NAME: str = "gpt-4o-mini"
+    HUGGINGFACE_API_KEY: str = ""
+    MODEL_NAME: str = "gemini-3.6-flash"
     CHROMA_PATH: str = str(Path(__file__).resolve().parent.parent / "data" / "chroma")
     HOST: str = "0.0.0.0"
     PORT: int = 8000
@@ -26,22 +28,46 @@ class Settings(BaseSettings):
         "http://localhost:3000",
     ]
 
-    @field_validator("OPENAI_API_KEY")
+    @field_validator("GEMINI_API_KEY", mode="before")
     @classmethod
-    def validate_openai_api_key(cls, value: str) -> str:
-        """Validate that OPENAI_API_KEY is provided and not empty."""
-        cleaned = value.strip()
-        if not cleaned or cleaned == "your_openai_api_key_here":
+    def check_gemini_env(cls, value: str) -> str:
+        """Fallback to GOOGLE_API_KEY environment variable if GEMINI_API_KEY is not set."""
+        if not value:
+            return os.environ.get("GOOGLE_API_KEY", "").strip()
+        return value.strip()
+
+    @field_validator("HUGGINGFACE_API_KEY", mode="before")
+    @classmethod
+    def check_hf_env(cls, value: str) -> str:
+        """Fallback to HF_TOKEN or HUGGINGFACEHUB_API_TOKEN environment variable."""
+        if not value:
+            return os.environ.get("HF_TOKEN", os.environ.get("HUGGINGFACEHUB_API_TOKEN", "")).strip()
+        return value.strip()
+
+    @model_validator(mode="after")
+    def validate_provider_keys(self) -> "Settings":
+        """Ensure that at least one supported LLM API key is provided and valid."""
+        gemini_key = self.GEMINI_API_KEY.strip() if self.GEMINI_API_KEY else ""
+        openai_key = self.OPENAI_API_KEY.strip() if self.OPENAI_API_KEY else ""
+        hf_key = self.HUGGINGFACE_API_KEY.strip() if self.HUGGINGFACE_API_KEY else ""
+
+        has_gemini = bool(gemini_key and gemini_key != "your_gemini_api_key_here")
+        has_openai = bool(openai_key and openai_key != "your_openai_api_key_here")
+        has_hf = bool(hf_key and hf_key != "your_huggingface_api_key_here")
+
+        if not has_gemini and not has_openai and not has_hf:
             raise ValueError(
                 "\n"
                 "====================================================================\n"
-                "FATAL CONFIGURATION ERROR: OPENAI_API_KEY is missing or invalid!\n"
-                "Please configure your key in backend/.env or set the OPENAI_API_KEY\n"
-                "environment variable before starting the application.\n"
-                "Example: OPENAI_API_KEY=sk-proj-...\n"
+                "FATAL CONFIGURATION ERROR: No LLM API key is configured!\n"
+                "Please configure GEMINI_API_KEY, HUGGINGFACE_API_KEY, or OPENAI_API_KEY in backend/.env\n"
                 "===================================================================="
             )
-        return cleaned
+
+        if has_gemini and not os.environ.get("GOOGLE_API_KEY"):
+            os.environ["GOOGLE_API_KEY"] = gemini_key
+
+        return self
 
 
 def get_settings() -> Settings:

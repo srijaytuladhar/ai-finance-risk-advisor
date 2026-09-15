@@ -7,6 +7,7 @@ from typing import Any
 from tabulate import tabulate
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.agent.graph import run_agent
 from app.config import settings
@@ -69,7 +70,12 @@ Assistant Response: {response_text}
             SystemMessage(content=JUDGE_PROMPT),
             HumanMessage(content=judge_user_content),
         ])
-        raw_content = judge_res.content.strip()
+        raw_obj = judge_res.content
+        if isinstance(raw_obj, list):
+            raw_content = "".join(p.get("text", "") if isinstance(p, dict) else str(p) for p in raw_obj)
+        else:
+            raw_content = str(raw_obj)
+        raw_content = raw_content.strip()
         # Clean any markdown code blocks
         if raw_content.startswith("```"):
             raw_content = raw_content.split("```")[1]
@@ -122,11 +128,18 @@ def main():
     with open(GOLDEN_SET_PATH, "r", encoding="utf-8") as f:
         golden_cases = json.load(f)
 
-    judge_llm = ChatOpenAI(
-        model=settings.MODEL_NAME,
-        openai_api_key=settings.OPENAI_API_KEY,
-        temperature=0.0,
-    )
+    if settings.GEMINI_API_KEY or "gemini" in settings.MODEL_NAME.lower():
+        judge_llm = ChatGoogleGenerativeAI(
+            model=settings.MODEL_NAME,
+            google_api_key=settings.GEMINI_API_KEY,
+            temperature=0.0,
+        )
+    else:
+        judge_llm = ChatOpenAI(
+            model=settings.MODEL_NAME,
+            openai_api_key=settings.OPENAI_API_KEY,
+            temperature=0.0,
+        )
 
     results = []
     for item in golden_cases:
