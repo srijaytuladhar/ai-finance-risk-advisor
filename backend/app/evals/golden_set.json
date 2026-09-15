@@ -1,0 +1,72 @@
+[
+  {
+    "id": "eval_01",
+    "question": "What is my portfolio's VaR at 95% confidence?",
+    "category": "risk_metric",
+    "expected_tools": ["calculate_var"],
+    "criteria": "Agent must call calculate_var tool and explain the maximum expected loss percentage at 95% confidence without hallucinating math."
+  },
+  {
+    "id": "eval_02",
+    "question": "What is my Sharpe ratio?",
+    "category": "risk_metric",
+    "expected_tools": ["calculate_sharpe"],
+    "criteria": "Agent must call calculate_sharpe and provide the risk-adjusted return ratio with a plain English interpretation."
+  },
+  {
+    "id": "eval_03",
+    "question": "What is my biggest sector exposure?",
+    "category": "portfolio_structure",
+    "expected_tools": ["get_sector_exposure"],
+    "criteria": "Agent must invoke get_sector_exposure, identify the top sector (e.g. Information Technology or Cash), and state the percentage."
+  },
+  {
+    "id": "eval_04",
+    "question": "What is my max drawdown over the last year?",
+    "category": "risk_metric",
+    "expected_tools": ["calculate_max_drawdown"],
+    "criteria": "Agent must call calculate_max_drawdown and report the peak-to-trough historical drop percentage."
+  },
+  {
+    "id": "eval_05",
+    "question": "What does VaR mean?",
+    "category": "rag_glossary",
+    "expected_tools": ["search_financial_docs"],
+    "criteria": "Agent must retrieve documentation from the glossary and explain Value at Risk conceptually in clear language."
+  },
+  {
+    "id": "eval_06",
+    "question": "Should I rebalance?",
+    "category": "portfolio_rebalance",
+    "expected_tools": ["calculate_weights", "suggest_rebalance"],
+    "criteria": "Agent must check portfolio weights/drifts and evaluate rebalancing needs against targets or investment policy bands."
+  },
+  {
+    "id": "eval_07",
+    "question": "What is my portfolio beta relative to the S&P 500 (SPY)?",
+    "category": "risk_metric",
+    "expected_tools": ["calculate_beta"],
+    "criteria": "Agent must call calculate_beta with SPY benchmark and explain systematic market sensitivity."
+  },
+  {
+    "id": "eval_08",
+    "question": "What is the annualized volatility of my portfolio?",
+    "category": "risk_metric",
+    "expected_tools": ["calculate_volatility"],
+    "criteria": "Agent must invoke calculate_volatility with annualized=True and present the standard deviation percentage."
+  },
+  {
+    "id": "eval_09",
+    "question": "What are my current portfolio holdings and their weights?",
+    "category": "portfolio_structure",
+    "expected_tools": ["calculate_weights", "get_portfolio_holdings"],
+    "criteria": "Agent must call portfolio tools to list each stock (AAPL, MSFT, JPM, etc.), shares, market values, and percentage weights."
+  },
+  {
+    "id": "eval_10",
+    "question": "What does our investment policy say about rebalancing trigger bands?",
+    "category": "rag_policy",
+    "expected_tools": ["search_financial_docs"],
+    "criteria": "Agent must retrieve from the Investment Policy Statement document and cite the tolerance drift band (e.g. 5% absolute deviation) and semi-annual calendar reviews."
+  }
+]

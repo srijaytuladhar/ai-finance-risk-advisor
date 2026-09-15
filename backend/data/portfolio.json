@@ -1,0 +1,11 @@
+{
+  "holdings": [
+    {"ticker": "AAPL", "shares": 50},
+    {"ticker": "MSFT", "shares": 30},
+    {"ticker": "JPM",  "shares": 40},
+    {"ticker": "XOM",  "shares": 25},
+    {"ticker": "JNJ",  "shares": 35},
+    {"ticker": "SPY",  "shares": 20}
+  ],
+  "cash": 15000.0
+}
