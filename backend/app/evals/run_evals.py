@@ -39,7 +39,7 @@ Output ONLY valid JSON matching this schema:
 
 
 def evaluate_single_turn(
-    item: dict[str, Any], judge_llm: ChatOpenAI
+    item: dict[str, Any], judge_llm: Any
 ) -> dict[str, Any]:
     """Execute a single golden test question, record tool calls, and obtain LLM-as-a-judge scores."""
     question = item["question"]
@@ -114,6 +114,77 @@ Assistant Response: {response_text}
     }
 
 
+def get_judge_llm() -> Any:
+    """Build evaluation judge LLM with fallback chain: Gemini -> OpenAI -> Hugging Face."""
+    candidates = []
+    if settings.OPENROUTER_API_KEY:
+        openrouter_model = getattr(settings, "OPENROUTER_MODEL", "") or "openai/gpt-4o-mini"
+        base_url = getattr(settings, "OPENROUTER_BASE_URL", "") or "https://openrouter.ai/api/v1"
+        candidates.append(
+            ChatOpenAI(
+                base_url=base_url,
+                api_key=settings.OPENROUTER_API_KEY,
+                model=openrouter_model,
+                temperature=0.0,
+            )
+        )
+    if settings.HUGGINGFACE_API_KEY:
+        hf_model = getattr(settings, "HUGGINGFACE_MODEL", "") or (
+            settings.MODEL_NAME if "/" in settings.MODEL_NAME else "Qwen/Qwen2.5-72B-Instruct"
+        )
+        candidates.append(
+            ChatOpenAI(
+                base_url="https://router.huggingface.co/v1",
+                api_key=settings.HUGGINGFACE_API_KEY,
+                model=hf_model,
+                temperature=0.0,
+            )
+        )
+    if settings.GEMINI_API_KEY:
+        gemini_model = getattr(settings, "GEMINI_MODEL", "") or (
+            settings.MODEL_NAME if "gemini" in settings.MODEL_NAME.lower() else "gemini-3.6-flash"
+        )
+        candidates.append(
+            ChatGoogleGenerativeAI(
+                model=gemini_model,
+                google_api_key=settings.GEMINI_API_KEY,
+                temperature=0.0,
+            )
+        )
+    
+    if settings.OPENAI_API_KEY:
+        openai_model = getattr(settings, "OPENAI_MODEL", "") or (
+            settings.MODEL_NAME if "gpt" in settings.MODEL_NAME.lower() else "gpt-4o-mini"
+        )
+        candidates.append(
+            ChatOpenAI(
+                model=openai_model,
+                openai_api_key=settings.OPENAI_API_KEY,
+                temperature=0.0,
+            )
+        )
+    if settings.HUGGINGFACE_API_KEY:
+        hf_model = getattr(settings, "HUGGINGFACE_MODEL", "") or (
+            settings.MODEL_NAME if "/" in settings.MODEL_NAME else "Qwen/Qwen2.5-72B-Instruct"
+        )
+        candidates.append(
+            ChatOpenAI(
+                base_url="https://router.huggingface.co/v1",
+                api_key=settings.HUGGINGFACE_API_KEY,
+                model=hf_model,
+                temperature=0.0,
+            )
+        )
+
+    if not candidates:
+        raise RuntimeError("No LLM API keys configured for evaluation judge.")
+
+    primary = candidates[0]
+    if len(candidates) > 1:
+        return primary.with_fallbacks(candidates[1:])
+    return primary
+
+
 def main():
     """Run all evaluations from golden_set.json, display formatted results, and save metrics to disk."""
     print("=" * 80)
@@ -128,18 +199,7 @@ def main():
     with open(GOLDEN_SET_PATH, "r", encoding="utf-8") as f:
         golden_cases = json.load(f)
 
-    if settings.GEMINI_API_KEY or "gemini" in settings.MODEL_NAME.lower():
-        judge_llm = ChatGoogleGenerativeAI(
-            model=settings.MODEL_NAME,
-            google_api_key=settings.GEMINI_API_KEY,
-            temperature=0.0,
-        )
-    else:
-        judge_llm = ChatOpenAI(
-            model=settings.MODEL_NAME,
-            openai_api_key=settings.OPENAI_API_KEY,
-            temperature=0.0,
-        )
+    judge_llm = get_judge_llm()
 
     results = []
     for item in golden_cases:

@@ -16,10 +16,16 @@ class Settings(BaseSettings):
     )
 
     GEMINI_API_KEY: str = ""
+    OPENROUTER_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
     HUGGINGFACE_API_KEY: str = ""
-    LLM_PROVIDER: str = "auto"  # "huggingface", "gemini", "openai", or "auto"
+    LLM_PROVIDER: str = "fallback"  # "fallback", "gemini", "openrouter", "openai", "huggingface", "auto"
     MODEL_NAME: str = "gemini-3.5-flash"
+    GEMINI_MODEL: str = "gemini-3.5-flash"
+    OPENROUTER_MODEL: str = "openai/gpt-4o-mini"
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+    OPENAI_MODEL: str = "gpt-4o-mini"
+    HUGGINGFACE_MODEL: str = "Qwen/Qwen2.5-72B-Instruct"
     CHROMA_PATH: str = str(Path(__file__).resolve().parent.parent / "data" / "chroma")
     HOST: str = "0.0.0.0"
     PORT: int = 8000
@@ -49,19 +55,21 @@ class Settings(BaseSettings):
     def validate_provider_keys(self) -> "Settings":
         """Ensure that at least one supported LLM API key is provided and valid."""
         gemini_key = self.GEMINI_API_KEY.strip() if self.GEMINI_API_KEY else ""
+        openrouter_key = self.OPENROUTER_API_KEY.strip() if self.OPENROUTER_API_KEY else ""
         openai_key = self.OPENAI_API_KEY.strip() if self.OPENAI_API_KEY else ""
         hf_key = self.HUGGINGFACE_API_KEY.strip() if self.HUGGINGFACE_API_KEY else ""
 
         has_gemini = bool(gemini_key and gemini_key != "your_gemini_api_key_here")
+        has_openrouter = bool(openrouter_key and openrouter_key != "your_openrouter_api_key_here")
         has_openai = bool(openai_key and openai_key != "your_openai_api_key_here")
         has_hf = bool(hf_key and hf_key != "your_huggingface_api_key_here")
 
-        if not has_gemini and not has_openai and not has_hf:
+        if not has_gemini and not has_openrouter and not has_openai and not has_hf:
             raise ValueError(
                 "\n"
                 "====================================================================\n"
                 "FATAL CONFIGURATION ERROR: No LLM API key is configured!\n"
-                "Please configure GEMINI_API_KEY, HUGGINGFACE_API_KEY, or OPENAI_API_KEY in backend/.env\n"
+                "Please configure GEMINI_API_KEY, OPENROUTER_API_KEY, OPENAI_API_KEY, or HUGGINGFACE_API_KEY in backend/.env\n"
                 "===================================================================="
             )
 

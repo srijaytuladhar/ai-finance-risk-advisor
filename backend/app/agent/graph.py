@@ -2,6 +2,7 @@
 
 import json
 import logging
+import time
 from typing import Any, Literal
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_openai import ChatOpenAI
@@ -48,47 +49,163 @@ AGENT_TOOLS = [
 TOOL_MAP = {t.name: t for t in AGENT_TOOLS}
 
 
-def get_llm():
-    """Instantiate the Chat model (Google Gemini, Hugging Face, or OpenAI) bound with deterministic tools."""
-    provider = settings.LLM_PROVIDER.lower().strip()
+def build_gemini_model():
+    """Build Google Gemini chat model."""
+    if not settings.GEMINI_API_KEY:
+        return None
+    model_name = getattr(settings, "GEMINI_MODEL", "") or (
+        settings.MODEL_NAME if "gemini" in settings.MODEL_NAME.lower() else "gemini-3.6-flash"
+    )
+    return ChatGoogleGenerativeAI(
+        model=model_name,
+        google_api_key=settings.GEMINI_API_KEY,
+        temperature=0.0,
+    )
 
-    if provider == "huggingface" or (provider == "auto" and settings.HUGGINGFACE_API_KEY and not settings.GEMINI_API_KEY):
-        model_name = settings.MODEL_NAME if "/" in settings.MODEL_NAME else "Qwen/Qwen2.5-72B-Instruct"
-        return ChatOpenAI(
-            base_url="https://router.huggingface.co/v1",
-            api_key=settings.HUGGINGFACE_API_KEY,
-            model=model_name,
-            temperature=0.0,
-        )
 
-    if provider == "gemini" or (provider == "auto" and settings.GEMINI_API_KEY) or "gemini" in settings.MODEL_NAME.lower():
-        model_name = settings.MODEL_NAME if "gemini" in settings.MODEL_NAME.lower() else "gemini-3.5-flash"
-        return ChatGoogleGenerativeAI(
-            model=model_name,
-            google_api_key=settings.GEMINI_API_KEY,
-            temperature=0.0,
-        )
-
+def build_openrouter_model():
+    """Build OpenRouter chat model with OpenAI-compatible API."""
+    if not settings.OPENROUTER_API_KEY:
+        return None
+    model_name = getattr(settings, "OPENROUTER_MODEL", "") or "openai/gpt-4o-mini"
+    base_url = getattr(settings, "OPENROUTER_BASE_URL", "") or "https://openrouter.ai/api/v1"
     return ChatOpenAI(
-        model=settings.MODEL_NAME if settings.MODEL_NAME else "gpt-4o-mini",
+        base_url=base_url,
+        api_key=settings.OPENROUTER_API_KEY,
+        model=model_name,
+        temperature=0.0,
+    )
+
+
+def build_openai_model():
+    """Build OpenAI chat model."""
+    if not settings.OPENAI_API_KEY:
+        return None
+    model_name = getattr(settings, "OPENAI_MODEL", "") or (
+        settings.MODEL_NAME if "gpt" in settings.MODEL_NAME.lower() else "gpt-4o-mini"
+    )
+    return ChatOpenAI(
+        model=model_name,
         openai_api_key=settings.OPENAI_API_KEY,
         temperature=0.0,
         streaming=False,
     )
 
 
-def agent_node(state: AgentState) -> dict[str, Any]:
-    """Node 1: Calls the LLM with all deterministic tools bound."""
-    llm = get_llm()
-    llm_with_tools = llm.bind_tools(AGENT_TOOLS)
+def build_huggingface_model():
+    """Build Hugging Face serverless chat model."""
+    if not settings.HUGGINGFACE_API_KEY:
+        return None
+    model_name = getattr(settings, "HUGGINGFACE_MODEL", "") or (
+        settings.MODEL_NAME if "/" in settings.MODEL_NAME else "Qwen/Qwen2.5-72B-Instruct"
+    )
+    return ChatOpenAI(
+        base_url="https://router.huggingface.co/v1",
+        api_key=settings.HUGGINGFACE_API_KEY,
+        model=model_name,
+        temperature=0.0,
+    )
 
+
+PROVIDER_COOLDOWNS: dict[str, float] = {}
+COOLDOWN_DURATION_SECONDS = 60.0
+
+
+def get_candidate_models() -> list[tuple[str, Any]]:
+    """Return prioritized candidate models bound with deterministic tools.
+
+    Priority order:
+    1. Gemini (Default first)
+    2. OpenRouter (Secondary fast fallback)
+    3. OpenAI (Tertiary fallback)
+    4. Hugging Face (Quaternary fallback)
+    """
+    provider = settings.LLM_PROVIDER.lower().strip()
+
+    builders = {
+        "gemini": ("gemini", build_gemini_model),
+        "openrouter": ("openrouter", build_openrouter_model),
+        "openai": ("openai", build_openai_model),
+        "huggingface": ("huggingface", build_huggingface_model),
+    }
+
+    all_providers = ["gemini", "openrouter", "openai", "huggingface"]
+
+    # If a specific single provider is explicitly set and not fallback/auto
+    if provider in builders:
+        order = [provider] + [p for p in all_providers if p != provider]
+    else:
+        # Default priority: gemini -> openrouter -> openai -> huggingface
+        order = all_providers
+
+    candidates: list[tuple[str, Any]] = []
+    now = time.time()
+    for name in order:
+        # Check if provider is currently in cooldown from a recent quota limit
+        if name in PROVIDER_COOLDOWNS and PROVIDER_COOLDOWNS[name] > now:
+            remaining = int(PROVIDER_COOLDOWNS[name] - now)
+            logger.info("Provider '%s' is in temporary cooldown (%ds remaining); skipping to next candidate.", name, remaining)
+            continue
+
+        _, builder_fn = builders[name]
+        try:
+            model = builder_fn()
+            if model is not None:
+                candidates.append((name, model.bind_tools(AGENT_TOOLS)))
+        except Exception as exc:
+            logger.warning("Failed to initialize LLM provider '%s': %s", name, str(exc))
+
+    return candidates
+
+
+def get_llm():
+    """Instantiate the primary chat model with LangChain fallbacks configured."""
+    candidates = get_candidate_models()
+    if not candidates:
+        raise RuntimeError("No LLM providers are configured with valid API keys.")
+
+    primary_name, primary_llm = candidates[0]
+    fallback_llms = [m for _, m in candidates[1:]]
+
+    if fallback_llms:
+        return primary_llm.with_fallbacks(fallback_llms)
+    return primary_llm
+
+
+def agent_node(state: AgentState) -> dict[str, Any]:
+    """Node 1: Calls the LLM with deterministic tools bound and automatic multi-provider fallback."""
     messages = list(state["messages"])
     # Ensure system prompt is always at the head
     if not messages or not isinstance(messages[0], SystemMessage):
         messages = [SystemMessage(content=SYSTEM_PROMPT)] + messages
 
-    response = llm_with_tools.invoke(messages)
-    return {"messages": [response]}
+    candidates = get_candidate_models()
+    if not candidates:
+        raise RuntimeError("No operational LLM providers configured in settings.")
+
+    errors: list[str] = []
+    for idx, (name, llm_with_tools) in enumerate(candidates):
+        try:
+            logger.info("Invoking agent node with provider: '%s' (candidate %d of %d)...", name, idx + 1, len(candidates))
+            response = llm_with_tools.invoke(messages)
+            return {"messages": [response]}
+        except Exception as exc:
+            err_msg = str(exc)
+            # If provider hit quota/rate limits, activate cooldown
+            if any(term in err_msg.lower() for term in ["429", "resource_exhausted", "quota", "rate limit", "ratelimit"]):
+                PROVIDER_COOLDOWNS[name] = time.time() + COOLDOWN_DURATION_SECONDS
+                logger.info("Activated %ds cooldown for provider '%s' due to rate/quota limits.", int(COOLDOWN_DURATION_SECONDS), name)
+
+            logger.warning(
+                "LLM provider '%s' failed during agent invocation (%s). Attempting next fallback...",
+                name,
+                err_msg,
+            )
+            errors.append(f"{name}: {err_msg}")
+
+    error_summary = " | ".join(errors)
+    logger.error("All candidate LLM providers failed: %s", error_summary)
+    raise RuntimeError(f"All LLM providers failed in fallback chain: {error_summary}")
 
 
 def tools_node(state: AgentState) -> dict[str, Any]:
