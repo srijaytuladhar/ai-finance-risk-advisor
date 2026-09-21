@@ -12,7 +12,15 @@ from langgraph.graph import END, StateGraph
 from app.agent.prompts import SYSTEM_PROMPT
 from app.agent.state import AgentState
 from app.config import settings
-from app.rag.retriever import search_financial_docs
+from app.rag.retriever import search_financial_docs, search_ledger_docs
+from app.tools.ledger_tools import (
+    calculate_financial_health_metrics,
+    get_account_balances,
+    get_category_breakdown,
+    get_monthly_cashflow,
+    get_spending_summary,
+    query_ledger_transactions,
+)
 from app.tools.market_tools import get_current_prices, get_price_history
 from app.tools.portfolio_tools import (
     calculate_weights,
@@ -30,8 +38,16 @@ from app.tools.risk_tools import (
 
 logger = logging.getLogger(__name__)
 
-# Complete suite of deterministic tools + RAG retriever tool
+# Complete suite of deterministic ledger tools + market tools + RAG retriever tools
 AGENT_TOOLS = [
+    get_account_balances,
+    get_spending_summary,
+    get_category_breakdown,
+    query_ledger_transactions,
+    get_monthly_cashflow,
+    calculate_financial_health_metrics,
+    search_ledger_docs,
+    search_financial_docs,
     calculate_var,
     calculate_sharpe,
     calculate_max_drawdown,
@@ -43,7 +59,6 @@ AGENT_TOOLS = [
     suggest_rebalance,
     get_current_prices,
     get_price_history,
-    search_financial_docs,
 ]
 
 TOOL_MAP = {t.name: t for t in AGENT_TOOLS}

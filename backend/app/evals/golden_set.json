@@ -1,72 +1,72 @@
 [
   {
     "id": "eval_01",
-    "question": "What is my portfolio's VaR at 95% confidence?",
-    "category": "risk_metric",
-    "expected_tools": ["calculate_var"],
-    "criteria": "Agent must call calculate_var tool and explain the maximum expected loss percentage at 95% confidence without hallucinating math."
+    "question": "What is my total net worth and account balance breakdown?",
+    "category": "ledger_balance",
+    "expected_tools": ["get_account_balances"],
+    "criteria": "Agent must call get_account_balances and report the total liquid balance (Rs. 165,500.30) across all 5 accounts without hallucinating math."
   },
   {
     "id": "eval_02",
-    "question": "What is my Sharpe ratio?",
-    "category": "risk_metric",
-    "expected_tools": ["calculate_sharpe"],
-    "criteria": "Agent must call calculate_sharpe and provide the risk-adjusted return ratio with a plain English interpretation."
+    "question": "What is my total spending and net savings rate this year?",
+    "category": "cashflow",
+    "expected_tools": ["get_spending_summary"],
+    "criteria": "Agent must call get_spending_summary and accurately state total income (Rs. 1.26M), total expenses (Rs. 1.58M), and net cashflow."
   },
   {
     "id": "eval_03",
-    "question": "What is my biggest sector exposure?",
-    "category": "portfolio_structure",
-    "expected_tools": ["get_sector_exposure"],
-    "criteria": "Agent must invoke get_sector_exposure, identify the top sector (e.g. Information Technology or Cash), and state the percentage."
+    "question": "What are my top spending categories?",
+    "category": "category_breakdown",
+    "expected_tools": ["get_category_breakdown"],
+    "criteria": "Agent must invoke get_category_breakdown and identify top categories such as Renovation, Technology, and Eating Out."
   },
   {
     "id": "eval_04",
-    "question": "What is my max drawdown over the last year?",
-    "category": "risk_metric",
-    "expected_tools": ["calculate_max_drawdown"],
-    "criteria": "Agent must call calculate_max_drawdown and report the peak-to-trough historical drop percentage."
+    "question": "Show me my transactions for Bike servicing and fuel.",
+    "category": "transaction_query",
+    "expected_tools": ["query_ledger_transactions"],
+    "criteria": "Agent must call query_ledger_transactions with Bike or Fuel category/query and list matching records with dates and amounts."
   },
   {
     "id": "eval_05",
-    "question": "What does VaR mean?",
-    "category": "rag_glossary",
-    "expected_tools": ["search_financial_docs"],
-    "criteria": "Agent must retrieve documentation from the glossary and explain Value at Risk conceptually in clear language."
+    "question": "What did I spend on my Manang trip?",
+    "category": "rag_trip",
+    "expected_tools": ["search_ledger_docs", "query_ledger_transactions"],
+    "criteria": "Agent must retrieve Manang trip records from ChromaDB or ledger queries and present the expenses incurred."
   },
   {
     "id": "eval_06",
-    "question": "Should I rebalance?",
-    "category": "portfolio_rebalance",
-    "expected_tools": ["calculate_weights", "suggest_rebalance"],
-    "criteria": "Agent must check portfolio weights/drifts and evaluate rebalancing needs against targets or investment policy bands."
+    "question": "What is my monthly cash flow trajectory from Jan to Sep 2026?",
+    "category": "cashflow_history",
+    "expected_tools": ["get_monthly_cashflow"],
+    "criteria": "Agent must invoke get_monthly_cashflow and report monthly progression and recent trajectory."
   },
   {
     "id": "eval_07",
-    "question": "What is my portfolio beta relative to the S&P 500 (SPY)?",
-    "category": "risk_metric",
-    "expected_tools": ["calculate_beta"],
-    "criteria": "Agent must call calculate_beta with SPY benchmark and explain systematic market sensitivity."
+    "question": "What is my emergency fund runway and burn rate?",
+    "category": "financial_health",
+    "expected_tools": ["calculate_financial_health_metrics"],
+    "criteria": "Agent must call calculate_financial_health_metrics and provide runway in months based on liquid reserves and average monthly burn."
   },
   {
     "id": "eval_08",
-    "question": "What is the annualized volatility of my portfolio?",
-    "category": "risk_metric",
-    "expected_tools": ["calculate_volatility"],
-    "criteria": "Agent must invoke calculate_volatility with annualized=True and present the standard deviation percentage."
+    "question": "How much income have I received from Fonepay salary?",
+    "category": "income_query",
+    "expected_tools": ["query_ledger_transactions", "get_category_breakdown"],
+    "criteria": "Agent must query Fonepay salary income and state the cumulative salary received into Citizen Bank."
   },
   {
     "id": "eval_09",
-    "question": "What are my current portfolio holdings and their weights?",
-    "category": "portfolio_structure",
-    "expected_tools": ["calculate_weights", "get_portfolio_holdings"],
-    "criteria": "Agent must call portfolio tools to list each stock (AAPL, MSFT, JPM, etc.), shares, market values, and percentage weights."
+    "question": "How much did I spend on Eating Out and Chiya?",
+    "category": "lifestyle_spend",
+    "expected_tools": ["get_category_breakdown", "query_ledger_transactions"],
+    "criteria": "Agent must report exact expenditures on Eating Out (Rs. 171K) and Chiya (Rs. 65K)."
   },
   {
     "id": "eval_10",
-    "question": "What does our investment policy say about rebalancing trigger bands?",
-    "category": "rag_policy",
-    "expected_tools": ["search_financial_docs"],
-    "criteria": "Agent must retrieve from the Investment Policy Statement document and cite the tolerance drift band (e.g. 5% absolute deviation) and semi-annual calendar reviews."
+    "question": "Which account holds the most of my liquid money?",
+    "category": "account_allocation",
+    "expected_tools": ["get_account_balances"],
+    "criteria": "Agent must call get_account_balances and state that Citizen Bank holds 84.8% of liquid funds (Rs. 140,355.99)."
   }
 ]

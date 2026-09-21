@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ShieldCheck, Activity, Layers, HelpCircle, Terminal } from "lucide-react";
+import { ShieldCheck, Terminal } from "lucide-react";
 import { ChatWindow } from "./components/ChatWindow";
 import { PortfolioSummary } from "./components/PortfolioSummary";
 import { checkBackendHealth } from "./lib/api";
@@ -41,14 +41,14 @@ export const App: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base sm:text-lg font-bold tracking-tight text-white">
-                  Fintech Portfolio Risk Advisor
+                  Fintech Financial &amp; Ledger Advisor
                 </h1>
                 <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] uppercase font-mono font-semibold bg-indigo-950/80 border border-indigo-700/50 text-indigo-300">
-                  v1.0 Production
+                  v1.0 Ledger
                 </span>
               </div>
               <p className="text-xs text-slate-400 hidden sm:block">
-                Hybrid LLM Reasoning &bull; Deterministic Tool Execution &bull; Zero Numerical Hallucinations
+                Deterministic Ledger Analytics &bull; Zero Hallucinations &bull; Multi-Account Intelligence
               </p>
             </div>
           </div>

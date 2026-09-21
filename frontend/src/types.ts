@@ -1,5 +1,5 @@
 /**
- * Core type definitions for Fintech Portfolio Risk Advisor.
+ * Core type definitions for Fintech Financial & Ledger Risk Advisor.
  */
 
 export interface Holding {
@@ -11,7 +11,56 @@ export interface Holding {
   sector?: string;
 }
 
+export interface AccountItem {
+  id: string;
+  name: string;
+  type: string;
+  balance: number;
+  initial_balance: number;
+  weight: number;
+  color: string;
+  is_default: boolean;
+}
+
+export interface CategorySummary {
+  category: string;
+  amount: number;
+  percentage: number;
+  count: number;
+  color?: string;
+  icon?: string;
+}
+
+export interface TransactionRecord {
+  id: string;
+  date: string;
+  type: "Income" | "Expense" | "Transfer";
+  amount: number;
+  description: string;
+  category: string;
+  account_name: string;
+}
+
+export interface MonthlyCashflow {
+  month: string;
+  income: number;
+  expense: number;
+  net: number;
+}
+
 export interface PortfolioData {
+  total_balance: number;
+  total_income: number;
+  total_expense: number;
+  net_cashflow: number;
+  savings_rate: number;
+  transaction_count: number;
+  accounts: AccountItem[];
+  top_categories: CategorySummary[];
+  monthly_cashflow: MonthlyCashflow[];
+  recent_transactions: TransactionRecord[];
+
+  // Compatibility fields
   holdings: Holding[];
   cash: number;
   total_value: number;

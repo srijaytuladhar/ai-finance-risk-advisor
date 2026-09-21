@@ -9,12 +9,12 @@ interface ChatWindowProps {
 }
 
 const STARTER_PROMPTS = [
-  "What is my portfolio's VaR at 95% confidence?",
-  "What is my Sharpe ratio?",
-  "Should I rebalance my portfolio?",
-  "What is my biggest sector exposure?",
-  "What does VaR mean and how is it calculated?",
-  "What is my portfolio beta relative to SPY?",
+  "What is my total net worth and account balance breakdown?",
+  "What are my top spending categories this year?",
+  "How much did I spend on Eating Out, Chiya, and Groceries?",
+  "What is my monthly cash flow and net savings rate?",
+  "How much income did I receive from Fonepay salary and Side Hustles?",
+  "Show me my expenses for the Manang trip and Bike servicing.",
 ];
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ onToolExecuted }) => {
@@ -23,7 +23,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onToolExecuted }) => {
       id: "welcome-1",
       role: "assistant",
       content:
-        "Welcome to the **Fintech Portfolio Risk Advisor**.\n\nI specialize in quantitative risk analysis and portfolio diagnostics. Every quantitative metric (VaR, Sharpe ratio, drawdown, volatility, beta, weights) is strictly computed via **deterministic financial tools** — eliminating hallucinated numbers.\n\nHow can I evaluate your investment portfolio today?",
+        "Welcome to the **Fintech Financial & Ledger Risk Advisor**.\n\nI have loaded your complete personal financial records from `ledger.json` across **Citizen Bank**, **eSewa**, **Cash**, **Laxmi Bank**, and **Prabhu Bank** (1,433 transactions).\n\nEvery metric (account balances, category expenditures, cash flow, savings rate, and transaction search) is strictly computed via **deterministic financial tools** — zero numerical hallucinations.\n\nHow can I help you evaluate your accounts, spending, or cash flow today?",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -162,7 +162,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onToolExecuted }) => {
       <div className="px-5 py-2 border-t border-slate-800/80 bg-slate-950/40">
         <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
           <Sparkles className="w-3 h-3 text-amber-400" />
-          Suggested Risk Diagnostics
+          Suggested Ledger Queries
         </div>
         <div className="flex flex-wrap gap-1.5">
           {STARTER_PROMPTS.map((prompt, idx) => (
@@ -185,7 +185,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onToolExecuted }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask anything about your portfolio risk (e.g. 'What is my VaR?', 'Should I rebalance?')..."
+            placeholder="Ask about accounts, spending, cash flow, trips (e.g., Manang), or salary..."
             rows={2}
             className="flex-1 bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-none resize-none px-2 py-1 leading-relaxed"
           />
@@ -199,7 +199,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onToolExecuted }) => {
           </button>
         </div>
         <div className="flex justify-between items-center text-[10px] text-slate-400 mt-1.5 px-1">
-          <span>Deterministic Tool Policy: LLMs never perform arithmetic directly.</span>
+          <span>Deterministic Ledger Policy: All balances, sums, & math computed via Python tools.</span>
           <span>Press Enter to send, Shift+Enter for new line</span>
         </div>
       </div>

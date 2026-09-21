@@ -1,5 +1,11 @@
-"""Tools module initialization exposing deterministic calculation and market tools."""
-
+from app.tools.ledger_tools import (
+    calculate_financial_health_metrics,
+    get_account_balances,
+    get_category_breakdown,
+    get_monthly_cashflow,
+    get_spending_summary,
+    query_ledger_transactions,
+)
 from app.tools.market_tools import get_current_prices, get_price_history
 from app.tools.portfolio_tools import (
     calculate_weights,
@@ -16,6 +22,12 @@ from app.tools.risk_tools import (
 )
 
 ALL_TOOLS = [
+    get_account_balances,
+    get_spending_summary,
+    get_category_breakdown,
+    query_ledger_transactions,
+    get_monthly_cashflow,
+    calculate_financial_health_metrics,
     get_current_prices,
     get_price_history,
     get_portfolio_holdings,
@@ -31,6 +43,12 @@ ALL_TOOLS = [
 
 __all__ = [
     "ALL_TOOLS",
+    "get_account_balances",
+    "get_spending_summary",
+    "get_category_breakdown",
+    "query_ledger_transactions",
+    "get_monthly_cashflow",
+    "calculate_financial_health_metrics",
     "get_current_prices",
     "get_price_history",
     "get_portfolio_holdings",
