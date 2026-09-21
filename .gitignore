@@ -64,3 +64,4 @@ desktop.ini
 
 /backend/data/ledger.json
 
+/spring-ai-backend/src/main/resources/data/ledger.json
